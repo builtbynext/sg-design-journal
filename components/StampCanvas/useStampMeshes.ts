@@ -18,6 +18,12 @@ export type StampMeshCtx = {
   /** Set as ctx.onFrame to drive scale/opacity lerp each rAF tick */
   onFrame: () => void;
   dispose: () => void;
+  titleMesh: THREE.Mesh;
+  titleMat: THREE.MeshBasicMaterial;
+  titleGeo: THREE.PlaneGeometry;
+  titleX: number;
+  titleY: number;
+  titleLinkBox: { x: number; y: number; w: number; h: number };
 };
 
 export async function setupStampMeshes(
@@ -118,7 +124,8 @@ export async function setupStampMeshes(
   const titleX = titleCol * COL_SPACING - gridHalfW;
   const titleY = -(titleRow * ROW_SPACING) + gridHalfH;
 
-  const titleTexture = createTitleTexture();
+  let titleHover = false;
+  let { texture: titleTexture, linkBox: titleLinkBox } = createTitleTexture(titleHover);
   const titleGeo = new THREE.PlaneGeometry(1.36, 1.36);
   const titleMat = new THREE.MeshBasicMaterial({
     map: titleTexture,
@@ -127,6 +134,8 @@ export async function setupStampMeshes(
   });
   const titleMesh = new THREE.Mesh(titleGeo, titleMat);
   titleMesh.position.set(titleX, titleY, 0);
+  titleMesh.userData.isTitle = true;
+  titleMesh.userData.linkBox = titleLinkBox;
   ctx.scene.add(titleMesh);
 
   function onFrame() {
@@ -162,5 +171,5 @@ export async function setupStampMeshes(
     titleMat.dispose();
   }
 
-  return { meshes, hoveredIdRef, panLimits, onFrame, dispose };
+  return { meshes, hoveredIdRef, panLimits, onFrame, dispose, titleMesh, titleMat, titleGeo, titleX, titleY, titleLinkBox };
 }

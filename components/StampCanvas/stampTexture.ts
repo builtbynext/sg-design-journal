@@ -73,7 +73,7 @@ export function createHoverOverlayTexture(project: Project): THREE.CanvasTexture
   return texture;
 }
 
-export function createTitleTexture(): THREE.CanvasTexture {
+export function createTitleTexture(hovered: boolean = false): { texture: THREE.CanvasTexture, linkBox: { x: number, y: number, w: number, h: number } } {
   const SIZE = 512;
   const canvas = document.createElement("canvas");
   canvas.width = SIZE;
@@ -98,14 +98,33 @@ export function createTitleTexture(): THREE.CanvasTexture {
   ctx.letterSpacing = "0px";
   ctx.fillText("Design Field Notes", cx, cy + 35);
 
-  // Subtitle
-  ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+  // Subtitle (hyperlink)
+  ctx.fillStyle = hovered ? "#4a90e2" : "rgba(255, 255, 255, 0.65)";
   ctx.font = "24px 'Geist Mono', monospace";
   ctx.letterSpacing = "5px";
-  ctx.fillText("Submit your project", cx, cy + 100);
+  ctx.textAlign = "center";
+  const linkText = "Submit your project";
+  ctx.fillText(linkText, cx, cy + 100);
+
+  // Calculate bounding box for link
+  const metrics = ctx.measureText(linkText);
+  const linkW = metrics.width;
+  const linkH = 28; // Approximate height
+  const linkX = cx - linkW / 2;
+  const linkY = cy + 100 - linkH / 2;
+
+  // Underline effect on hover
+  if (hovered) {
+    ctx.strokeStyle = "#4a90e2";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(linkX, cy + 110);
+    ctx.lineTo(linkX + linkW, cy + 110);
+    ctx.stroke();
+  }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.generateMipmaps = false;
   texture.needsUpdate = true;
-  return texture;
+  return { texture, linkBox: { x: linkX, y: linkY, w: linkW, h: linkH } };
 }

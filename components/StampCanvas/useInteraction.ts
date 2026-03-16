@@ -6,6 +6,7 @@
 import * as THREE from "three";
 import { ThreeCtx } from "./useThreeScene";
 import { StampMeshCtx } from "./useStampMeshes";
+import { createTitleTexture } from "./stampTexture";
 
 export function setupInteraction(
   ctx: ThreeCtx,
@@ -13,7 +14,7 @@ export function setupInteraction(
   onSelectProject: (id: string) => void
 ): () => void {
   const { renderer, camera, cameraOffsetRef } = ctx;
-  const { meshes, hoveredIdRef, panLimits } = stampCtx;
+  const { meshes, hoveredIdRef, panLimits, titleMesh, titleMat, titleX, titleY, titleLinkBox } = stampCtx;
   const MAX_PAN_X = panLimits.x;
   const MAX_PAN_Y = panLimits.y;
   const canvas = renderer.domElement;
@@ -30,11 +31,38 @@ export function setupInteraction(
     return hits.length > 0 ? (hits[0].object as THREE.Mesh) : null;
   }
 
+  /** Returns world-space x,y where the current raycaster ray hits z=0. */
+  function worldAtZ0(): { x: number; y: number } {
+    const t = -raycaster.ray.origin.z / raycaster.ray.direction.z;
+    return {
+      x: raycaster.ray.origin.x + t * raycaster.ray.direction.x,
+      y: raycaster.ray.origin.y + t * raycaster.ray.direction.y,
+    };
+  }
+
   // ── Mouse move: hover ───────────────────────────────────────────────────
+  let titleHover = false;
   function onMouseMove(e: MouseEvent) {
     const hit = getHit(e.clientX, e.clientY);
     hoveredIdRef.value = hit ? hit.userData.projectId : null;
     canvas.style.cursor = hit ? "pointer" : "default";
+
+    // Check if mouse is over the title link
+    const w = worldAtZ0();
+    const localX = (w.x - titleX) * (512 / 1.36) + 256;
+    const localY = -(w.y - titleY) * (512 / 1.36) + 256;
+    const box = titleLinkBox;
+    const inLink = localX >= box.x && localX <= box.x + box.w && localY >= box.y && localY <= box.y + box.h;
+    if (inLink !== titleHover) {
+      titleHover = inLink;
+      titleMat.map?.dispose();
+      const { texture } = createTitleTexture(titleHover);
+      titleMat.map = texture;
+      titleMat.needsUpdate = true;
+    }
+    if (inLink) {
+      canvas.style.cursor = "pointer";
+    }
   }
 
   // ── Wheel: pan ──────────────────────────────────────────────────────────
@@ -85,6 +113,15 @@ export function setupInteraction(
       const hit = getHit(e.clientX, e.clientY);
       if (hit?.userData.projectId) {
         onSelectProject(hit.userData.projectId);
+      }
+      // Check if mouse is over the title link
+      const w = worldAtZ0();
+      const localX = (w.x - titleX) * (512 / 1.36) + 256;
+      const localY = -(w.y - titleY) * (512 / 1.36) + 256;
+      const box = titleLinkBox;
+      const inLink = localX >= box.x && localX <= box.x + box.w && localY >= box.y && localY <= box.y + box.h;
+      if (inLink) {
+        window.open("https://google.com", "_blank");
       }
     }
   }

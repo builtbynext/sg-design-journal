@@ -23,7 +23,7 @@ export function setupThreeScene(container: HTMLDivElement): {
   scene.background = new THREE.Color("#0a0a0a");
 
   const camera = new THREE.PerspectiveCamera(
-    25, // Halved FOV for 2x zoom
+    23, // Halved FOV for 2x zoom
     container.clientWidth / container.clientHeight,
     0.1,
     100
