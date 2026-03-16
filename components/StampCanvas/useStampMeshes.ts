@@ -26,7 +26,8 @@ export async function setupStampMeshes(
 ): Promise<StampMeshCtx> {
   // ── Derive how many columns fit the visible viewport ─────────────────────
   // Visible world-height at z=0 from a 50° FOV camera at z=12
-  const fovY = (50 * Math.PI) / 180;
+    // Visible world-height at z=0 from the actual camera FOV
+  const fovY = (ctx.camera.fov * Math.PI) / 180; 
   const visibleH = 2 * Math.tan(fovY / 2) * ctx.camera.position.z;
   const aspect = ctx.renderer.domElement.clientWidth / ctx.renderer.domElement.clientHeight;
   const visibleW = visibleH * aspect;
@@ -62,15 +63,26 @@ export async function setupStampMeshes(
   const overlays: THREE.Mesh[] = [];
   const hoveredIdRef = { value: null as string | null };
 
-  projects.forEach((project, i) => {
-    const col = i % COLS;
-    const row = Math.floor(i / COLS);
+  // Reserve the center grid slot for the title — stamps skip this index
+  const titleSlot = Math.floor(ROWS / 2) * COLS + Math.floor(COLS / 2);
+  const totalSlots = ROWS * COLS;
 
+  // Walk grid slots, skipping titleSlot; consume one project per non-title slot
+  let projectIdx = 0;
+  for (let slotIdx = 0; slotIdx < totalSlots && projectIdx < projects.length; slotIdx++) {
+    if (slotIdx === titleSlot) continue;
+
+    const project = projects[projectIdx];
+    const img = images[projectIdx];
+    projectIdx++;
+
+    const col = slotIdx % COLS;
+    const row = Math.floor(slotIdx / COLS);
     const stampX = col * COL_SPACING - gridHalfW;
     const stampY = -(row * ROW_SPACING) + gridHalfH;
 
     // ── Stamp mesh ──────────────────────────────────────────────────────────
-    const texture = createStampTexture(project, images[i]);
+    const texture = createStampTexture(project, img);
     const geo = new THREE.PlaneGeometry(1.6, 1.6);
     const mat = new THREE.MeshBasicMaterial({ map: texture });
     const mesh = new THREE.Mesh(geo, mat);
@@ -92,18 +104,23 @@ export async function setupStampMeshes(
     overlayMesh.position.set(stampX, stampY, 0.02);
     ctx.scene.add(overlayMesh);
     overlays.push(overlayMesh);
-  });
+  }
 
-  // Title mesh — centered in the grid, slightly behind stamps
+  // ── Title mesh — occupies the reserved center grid slot ──────────────────
+  const titleCol = titleSlot % COLS;
+  const titleRow = Math.floor(titleSlot / COLS);
+  const titleX = titleCol * COL_SPACING - gridHalfW;
+  const titleY = -(titleRow * ROW_SPACING) + gridHalfH;
+
   const titleTexture = createTitleTexture();
-  const titleGeo = new THREE.PlaneGeometry(2.4, 1.5);
+  const titleGeo = new THREE.PlaneGeometry(1.6, 1.6);
   const titleMat = new THREE.MeshBasicMaterial({
     map: titleTexture,
     transparent: true,
     depthWrite: false,
   });
   const titleMesh = new THREE.Mesh(titleGeo, titleMat);
-  titleMesh.position.set(0, 0, -0.05);
+  titleMesh.position.set(titleX, titleY, 0);
   ctx.scene.add(titleMesh);
 
   function onFrame() {
