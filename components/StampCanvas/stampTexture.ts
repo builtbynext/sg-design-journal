@@ -85,7 +85,7 @@ export function createTitleTexture(hovered: boolean = false): { texture: THREE.C
   const cx = SIZE / 2;
   const cy = SIZE / 2;
 
-  // "FOFSG#25 - START" — small caps, wide tracking
+  // "Heading" — small uppercase with wide letter spacing
   ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
   ctx.font = "22px Geist Mono, Arial, sans-serif";
   ctx.textAlign = "center";
