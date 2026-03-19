@@ -65,7 +65,7 @@ export async function setupStampMeshes(
           img.crossOrigin = "anonymous";
           img.onload = () => resolve(img);
           img.onerror = () => resolve(null);
-          img.src = `${p.cover_image_url}/400/400`;
+          img.src = p.cover_image_url;
         })
     )
   );
