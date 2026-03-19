@@ -23,7 +23,10 @@ async function fetchApprovedProjects(): Promise<Project[]> {
     console.warn("Falling back to mock data:", error?.message ?? "no data");
     return mockProjects;
   }
-  return data as Project[];
+  const projects = data as Project[];
+  return Array.from({ length: 8 }, (_, repeat) =>
+    projects.map((p) => ({ ...p, id: `${p.id}-${repeat}` }))
+  ).flat();
 }
 
 export default async function Home() {
